@@ -180,10 +180,12 @@ void scanCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
 {
     scan_points.clear();
     double angle = msg->angle_min;
+    // 1. 坐标转换：将激光扫描数据转换为地图坐标系下的点云
     for (size_t i = 0; i < msg->ranges.size(); ++i)
     {
         if (msg->ranges[i] >= msg->range_min && msg->ranges[i] <= msg->range_max)
         {
+            // 将极坐标转换为笛卡尔坐标，并基于地图分辨率进行缩放
             float x = msg->ranges[i] * cos(angle) / map_msg.info.resolution;
             float y = -msg->ranges[i] * sin(angle) / map_msg.info.resolution;
             scan_points.push_back(cv::Point2f(x, y));
@@ -193,6 +195,7 @@ void scanCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
     if(scan_count == 0)
         scan_count ++;
 
+    // 2. 扫描匹配优化：通过三种位姿假设（当前角度、±1度）和五种偏移量（中心/四方向）寻找最优匹配
     while (ros::ok())
     {
         if (!map_cropped.empty())
